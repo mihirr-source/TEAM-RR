@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Node & Frontend
+node_modules/
+dist/
+*.log
+.vite/
+
 # Virtual environments
 venv/
 env/

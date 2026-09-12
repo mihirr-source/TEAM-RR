@@ -1,5 +1,9 @@
+import warnings
 import joblib
 import os
+
+# Suppress sklearn unpickling warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # Get the directory of the current file
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -8,8 +12,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 try:
     vectorizer = joblib.load(os.path.join(BASE_DIR, "tfidf_vectorizer.pkl"))
     model = joblib.load(os.path.join(BASE_DIR, "toxicity_model.pkl"))
-except FileNotFoundError:
-    print("Warning: Model or vectorizer files not found.")
+except Exception as e:
+    print(f"Warning: Model or vectorizer files could not be loaded: {e}")
     vectorizer = None
     model = None
 
