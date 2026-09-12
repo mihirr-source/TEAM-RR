@@ -19,14 +19,23 @@
     "worthless piece of shit", "nobody likes you", "drop dead", "eat shit",
     "get the fuck out", "motherfucker", "dumb fuck", "dumb bitch",
     "son of a bitch", "ass hole", "fat ugly", "kill your self",
-    "die in a fire", "suck my dick", "suck my cock", "kiss my ass"
+    "die in a fire", "suck my dick", "suck my cock", "kiss my ass",
+    // Hindi / Hinglish compounds
+    "mc bc", "maa ki chut", "teri maa ki", "teri maa ki chut", "teri behen ki",
+    "bhen ke lode", "bhen ke takke", "bhosadike", "bhosdi ke", "bhosdiwale",
+    "gaand mara", "gaand maro", "chut ke dhakkan", "lund ke baal", "kutta kamina"
   ];
 
   const BASE_WORDS_BALANCED = [
     "fuck", "fucking", "fucked", "fucker", "shit", "bitch", "cunt",
     "asshole", "dick", "pussy", "bastard", "faggot", "nigger", "retard",
     "moron", "idiot", "idiots", "stupid", "dumbass", "bullshit",
-    "slut", "whore", "cock", "penis", "piss", "suck", "sucks"
+    "slut", "whore", "cock", "penis", "piss", "suck", "sucks",
+    // Hindi / Hinglish abusive words
+    "bhenchod", "behenchod", "madarchod", "chutiya", "chutiye", "chutiyapa",
+    "bhosdike", "bsdk", "bhosdi", "gandu", "gaandu", "gaand", "lund", "loda",
+    "lauda", "lodu", "randi", "rndi", "harami", "kameene", "kamina", "saala", "saale",
+    "mc", "bc"
   ];
 
   const BASE_WORDS_STRICT = [
@@ -37,7 +46,8 @@
 
   const BASE_WORDS_RELAXED = [
     "fuck", "fucking", "fucked", "fucker", "cunt", "faggot", "nigger",
-    "retard", "bitch", "motherfucker", "kill yourself"
+    "retard", "bitch", "motherfucker", "kill yourself",
+    "bhenchod", "behenchod", "madarchod", "chutiya", "bhosdike", "bsdk", "gandu", "randi", "mc", "bc"
   ];
 
   // Helper to escape regex special characters

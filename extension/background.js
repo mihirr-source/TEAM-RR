@@ -14,7 +14,7 @@ const DEFAULT_COMPOUNDS = [
   "kill yourself", "go die", "delete your account", "waste of space",
   "worthless piece of shit", "nobody likes you", "drop dead", "eat shit",
   "get the fuck out", "motherfucker", "dumb fuck", "dumb bitch",
-  "son of a bitch", "ass hole", "fat ugly", "kill your self", "bhenchod"
+  "son of a bitch", "ass hole", "fat ugly", "kill your self", "Bhenchod", "madarchod", "chutiya", "mc", "bc", "mc bc", "bitch"
 ];
 
 // Initialize default settings on install or startup

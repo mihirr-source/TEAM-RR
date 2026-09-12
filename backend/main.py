@@ -179,7 +179,13 @@ def _get_toxic_lexicon():
         "kill yourself", "go die", "delete your account", "waste of space",
         "worthless piece of shit", "nobody likes you", "drop dead", "eat shit",
         "get the fuck out", "motherfucker", "dumb fuck", "dumb bitch",
-        "son of a bitch", "ass hole", "fat ugly", "kill your self"
+        "son of a bitch", "ass hole", "fat ugly", "kill your self",
+        "bhenchod", "behenchod", "madarchod", "chutiya", "chutiye", "chutiyapa",
+        "bhosdike", "bsdk", "bhosdi", "gandu", "gaandu", "gaand", "lund", "loda",
+        "lauda", "lodu", "randi", "rndi", "harami", "kameene", "kamina", "saala", "saale",
+        "mc", "bc", "mc bc", "maa ki chut", "teri maa ki", "teri maa ki chut", "teri behen ki",
+        "bhen ke lode", "bhen ke takke", "bhosadike", "bhosdi ke", "bhosdiwale",
+        "gaand mara", "gaand maro", "chut ke dhakkan", "lund ke baal", "kutta kamina"
     ]
 
     _TOXIC_LEXICON_CACHE = {
