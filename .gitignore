@@ -1,0 +1,24 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Model weights and datasets
+*.pt
+*.pth
+*.h5
+*.onnx
+*.weights
+*.bin
+datasets/
+models/
+
+# OS specific files
+.DS_Store
+Thumbs.db
