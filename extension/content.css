@@ -77,3 +77,226 @@
   user-select: text !important;
   pointer-events: auto !important;
 }
+
+/* ==========================================================================
+   AI Shield - Pre-Post Toxicity Check & Warning Tooltip Styling
+   ========================================================================== */
+
+.ai-shield-toxicity-tooltip {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  margin-bottom: 12px !important;
+  padding: 14px 16px !important;
+  border-radius: 12px !important;
+  background: rgba(26, 17, 24, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(239, 68, 68, 0.55) !important;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.2), 0 0 0 1px rgba(239, 68, 68, 0.15) !important;
+  color: #f8fafc !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  animation: ai-shield-slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  position: relative !important;
+  z-index: 99999 !important;
+}
+
+@keyframes ai-shield-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-shield-tooltip-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+
+.ai-shield-tooltip-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #fca5a5 !important;
+}
+
+.ai-shield-tooltip-icon {
+  font-size: 15px !important;
+  line-height: 1 !important;
+}
+
+.ai-shield-tooltip-badge {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 2px 8px !important;
+  border-radius: 9999px !important;
+  background: rgba(239, 68, 68, 0.2) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  color: #f87171 !important;
+  white-space: nowrap !important;
+}
+
+.ai-shield-tooltip-body {
+  color: #cbd5e1 !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+.ai-shield-suggestion-box {
+  background: rgba(16, 185, 129, 0.08) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  border-left: 3px solid #10b981 !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+.ai-shield-suggestion-label {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  color: #34d399 !important;
+}
+
+.ai-shield-suggestion-text {
+  font-size: 13.5px !important;
+  color: #e2e8f0 !important;
+  margin: 0 !important;
+  font-style: italic !important;
+  line-height: 1.4 !important;
+  word-break: break-word !important;
+}
+
+.ai-shield-tooltip-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-top: 4px !important;
+}
+
+.ai-shield-btn-accept {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 7px !important;
+  padding: 7px 14px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.ai-shield-btn-accept:hover {
+  background: linear-gradient(135deg, #059669, #047857) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+.ai-shield-btn-accept:active {
+  transform: translateY(0) !important;
+}
+
+.ai-shield-btn-dismiss {
+  display: inline-flex !important;
+  align-items: center !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 7px !important;
+  padding: 7px 12px !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.ai-shield-btn-dismiss:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Inline Copy Button in Suggestion Box */
+.ai-shield-btn-copy-inline {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  color: #34d399 !important;
+  border-radius: 6px !important;
+  padding: 3px 8px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.ai-shield-btn-copy-inline:hover {
+  background: rgba(16, 185, 129, 0.3) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Floating Toast Guidance Pill */
+.ai-shield-toast-pill {
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 9px 18px !important;
+  border-radius: 9999px !important;
+  background: linear-gradient(135deg, #065f46, #047857) !important;
+  backdrop-filter: blur(12px) !important;
+  color: #ffffff !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(52, 211, 153, 0.4) !important;
+  animation: ai-shield-toast-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+@keyframes ai-shield-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.ai-shield-toast-pill kbd {
+  background: rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 4px !important;
+  padding: 2px 6px !important;
+  font-family: inherit !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: #f8fafc !important;
+}
+
+

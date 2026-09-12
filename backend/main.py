@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from transformers import pipeline
+from sentence_transformers import SentenceTransformer, util
 
 from model import predict_toxicity
 
@@ -17,6 +18,14 @@ try:
 except Exception as e:
     print(f"Warning: Failed to load Falconsai/nsfw_image_detection: {e}")
     nsfw_classifier = None
+
+# Globally load all-MiniLM-L6-v2 model for semantic trigger filtering
+try:
+    trigger_model = SentenceTransformer("all-MiniLM-L6-v2")
+    print("Semantic trigger model (all-MiniLM-L6-v2) loaded successfully.")
+except Exception as e:
+    print(f"Warning: Failed to load all-MiniLM-L6-v2: {e}")
+    trigger_model = None
 
 app = FastAPI(title="Social Media Safety Demo API")
 
@@ -127,6 +136,26 @@ def get_demo():
         from fastapi.responses import FileResponse
         return FileResponse(demo_path)
     return {"error": f"demo.html not found at {demo_path}"}
+
+
+@app.get("/content.js")
+def get_content_js():
+    """Serve extension content.js directly over HTTP."""
+    js_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "extension", "content.js"))
+    if os.path.exists(js_path):
+        from fastapi.responses import FileResponse
+        return FileResponse(js_path, media_type="application/javascript")
+    return {"error": "content.js not found"}
+
+
+@app.get("/content.css")
+def get_content_css():
+    """Serve extension content.css directly over HTTP."""
+    css_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "extension", "content.css"))
+    if os.path.exists(css_path):
+        from fastapi.responses import FileResponse
+        return FileResponse(css_path, media_type="text/css")
+    return {"error": "content.css not found"}
 
 
 # ---------------------------------------------------------------------------
@@ -342,4 +371,124 @@ def create_post(payload: CreatePostRequest):
     }
     MOCK_POSTS.insert(0, new_post)
     return new_post
+
+
+# ---------------------------------------------------------------------------
+# POST /check-draft — pre-post toxicity check & safe rephrase suggestions
+# ---------------------------------------------------------------------------
+
+import re
+
+PHRASE_REPLACEMENTS = [
+    (r'(?i)\bnobody likes your posts\.?\s*delete your account,?\s*loser\.?', 'I have a different perspective on this topic.'),
+    (r'(?i)\byou(?:\'re| are) absolutely worthless at this\.?\s*everyone is laughing at you\.?', 'There is room for improvement here, but keep learning.'),
+    (r'(?i)\bimagine being this clueless\.?\s*total embarrassment\.?', 'I see things differently, but let us discuss respectfully.'),
+    (r'(?i)\bif you can\'?t keep up,?\s*stay out of my way\.?\s*weak effort everywhere\.?', 'Let us encourage everyone to do their best and keep improving.'),
+    (r'(?i)\bblock me if this offends you\.?\s*your feelings are not my problem\.?', 'Here is my perspective on this topic for open discussion.'),
+    (r'(?i)\bdelete your account,?\s*loser\.?', 'I disagree with this post.'),
+    (r'(?i)\bdelete your account\b', 'reconsider this post'),
+    (r'(?i)\bkill yourself\b', 'take care of yourself'),
+    (r'(?i)\bgo die\b', 'take a break'),
+    (r'(?i)\bfuck(?:ing)? idiot\b', 'misguided individual'),
+    (r'(?i)\bfuck(?:ing)? loser\b', 'person I disagree with'),
+    (r'(?i)\bfuck off\b', 'please leave me be'),
+    (r'(?i)\bfuck you\b', 'I strongly disagree with you'),
+    (r'(?i)\bshut up\b', 'let us take a pause'),
+    (r'(?i)\bshut the fuck up\b', 'let us pause this conversation'),
+    (r'(?i)\bpiece of shit\b', 'unpleasant situation'),
+    (r'(?i)\bworthless\b', 'challenging'),
+    (r'(?i)\bloser\b', 'friend'),
+    (r'(?i)\bidiot\b', 'mistaken person'),
+    (r'(?i)\bmoron\b', 'individual'),
+    (r'(?i)\bstupid\b', 'unhelpful'),
+    (r'(?i)\bdumb\b', 'unclear'),
+    (r'(?i)\basshole\b', 'rude person'),
+    (r'(?i)\bbitch\b', 'person'),
+    (r'(?i)\bbullshit\b', 'inaccurate'),
+]
+
+
+def generate_safe_suggestion(text: str) -> str:
+    cleaned = text
+    for pattern, repl in PHRASE_REPLACEMENTS:
+        cleaned = re.sub(pattern, repl, cleaned)
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    if predict_toxicity(cleaned) > 0.35 or cleaned == text:
+        cleaned = 'I disagree with this viewpoint, but appreciate the discussion.'
+    return cleaned
+
+
+class CheckDraftRequest(BaseModel):
+    text: str | None = ""
+    draft: str | None = None
+    threshold: float = 0.7
+
+
+@app.post("/check-draft")
+def check_draft(payload: CheckDraftRequest):
+    """Analyze a draft post before publication, returning toxicity flag and suggested safe text."""
+    draft_text = (payload.text or payload.draft or "").strip()
+    if not draft_text:
+        return {
+            "is_toxic": False,
+            "toxicity_score": 0.0,
+            "suggested_text": "",
+            "safe_text": "",
+            "threshold": payload.threshold,
+        }
+
+    score = predict_toxicity(draft_text)
+    is_toxic = score > payload.threshold
+
+    if is_toxic:
+        safe_suggestion = generate_safe_suggestion(draft_text)
+        return {
+            "is_toxic": True,
+            "toxicity_score": round(score, 4),
+            "suggested_text": safe_suggestion,
+            "safe_text": safe_suggestion,
+            "threshold": payload.threshold,
+        }
+    else:
+        return {
+            "is_toxic": False,
+            "toxicity_score": round(score, 4),
+            "suggested_text": draft_text,
+            "safe_text": draft_text,
+            "threshold": payload.threshold,
+        }
+
+
+# ---------------------------------------------------------------------------
+# POST /analyze-trigger — Semantic Trigger Filter Endpoint
+# ---------------------------------------------------------------------------
+
+class AnalyzeTriggerRequest(BaseModel):
+    trigger: str
+    text: str
+
+
+@app.post("/analyze-trigger")
+def analyze_trigger(payload: AnalyzeTriggerRequest):
+    """Calculate semantic similarity between custom trigger and scraped text using all-MiniLM-L6-v2."""
+    trigger = (payload.trigger or "").strip()
+    text = (payload.text or "").strip()
+    if not trigger or not text or trigger_model is None:
+        return {
+            "trigger_matched": False,
+            "score": 0.0
+        }
+
+    emb_trigger = trigger_model.encode(trigger, convert_to_tensor=True)
+    emb_text = trigger_model.encode(text, convert_to_tensor=True)
+    cos_sim = util.cos_sim(emb_trigger, emb_text)
+    score = float(cos_sim[0][0])
+
+    is_matched = bool(score > 0.45)
+    return {
+        "trigger_matched": is_matched,
+        "score": float(score)
+    }
+
+
 

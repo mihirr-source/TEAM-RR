@@ -246,6 +246,7 @@
       color: #ffffff;
     }
   </style>
+  <link rel="stylesheet" href="content.css">
 </head>
 <body>
   <div class="container">
@@ -275,6 +276,35 @@
         </div>
         <button class="btn-post" id="btnPublish">Publish Post</button>
       </div>
+    </div>
+
+    <!-- Direct Chat & Comment Simulator (Instagram DM / WhatsApp Web style) -->
+    <div class="composer chat-simulator" style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: #f8fafc;">
+          <span>💬</span>
+          <span>Instagram DM & WhatsApp Chat Simulator</span>
+        </div>
+        <span style="font-size: 11px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); padding: 2px 8px; border-radius: 9999px;">Lexical & ContentEditable (Press Enter or Send)</span>
+      </div>
+      <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px 14px; min-height: 48px; max-height: 120px; overflow-y: auto; outline: none; font-size: 14px; color: #f8fafc;"
+           id="chatComposer"
+           contenteditable="true"
+           role="textbox"
+           aria-label="Message"
+           aria-multiline="true">
+        <p><span data-lexical-text="true"></span></p>
+      </div>
+      <div class="composer-actions" style="margin-top: 10px;">
+        <div class="sample-buttons">
+          <button type="button" class="btn-sample" onclick="insertChatSample('Good luck with your project launch! 🚀')">Chat Safe</button>
+          <button type="button" class="btn-sample" onclick="insertChatSample('You are a fucking idiot.')">Chat Toxic</button>
+          <button type="button" class="btn-sample" onclick="insertChatSample('Nobody likes you, kill yourself.')">Chat Severe</button>
+        </div>
+        <button type="button" class="btn-post" id="btnChatSend" style="background: linear-gradient(135deg, #0284c7, #2563eb);">Send Message</button>
+      </div>
+      <!-- Sent Chat Log -->
+      <div id="chatMessages" style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;"></div>
     </div>
 
     <!-- Posts Feed -->
@@ -431,6 +461,26 @@
       input.value = "";
     });
 
+    function insertChatSample(text) {
+      const box = document.getElementById("chatComposer");
+      box.focus();
+      box.innerHTML = `<p><span data-lexical-text="true">${text}</span></p>`;
+    }
+
+    function sendChatMessage() {
+      const box = document.getElementById("chatComposer");
+      const text = (box.innerText || box.textContent || "").trim();
+      if (!text) return;
+      const thread = document.getElementById("chatMessages");
+      const bubble = document.createElement("div");
+      bubble.style.cssText = "align-self: flex-end; background: #2563eb; color: #ffffff; padding: 8px 14px; border-radius: 14px 14px 2px 14px; font-size: 13px; max-width: 80%; word-break: break-word;";
+      bubble.textContent = text;
+      thread.appendChild(bubble);
+      box.innerHTML = `<p><span data-lexical-text="true"></span></p>`;
+    }
+
+    document.getElementById("btnChatSend").addEventListener("click", sendChatMessage);
+
     // Dynamically load real feed from backend
     async function loadFeed() {
       try {
@@ -471,5 +521,6 @@
     }
     loadFeed();
   </script>
+  <script src="content.js"></script>
 </body>
 </html>
