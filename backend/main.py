@@ -1,8 +1,22 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+from io import BytesIO
+import urllib.request
+from PIL import Image
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from transformers import pipeline
 
 from model import predict_toxicity
+
+# Globally load Falconsai/nsfw_image_detection model
+try:
+    nsfw_classifier = pipeline("image-classification", model="Falconsai/nsfw_image_detection")
+except Exception as e:
+    print(f"Warning: Failed to load Falconsai/nsfw_image_detection: {e}")
+    nsfw_classifier = None
 
 app = FastAPI(title="Social Media Safety Demo API")
 
@@ -105,24 +119,192 @@ def get_feed():
     return MOCK_POSTS
 
 
+@app.get("/demo")
+def get_demo():
+    """Serve the interactive demo feed HTML page directly over HTTP."""
+    demo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "extension", "demo.html"))
+    if os.path.exists(demo_path):
+        from fastapi.responses import FileResponse
+        return FileResponse(demo_path)
+    return {"error": f"demo.html not found at {demo_path}"}
+
+
 # ---------------------------------------------------------------------------
-# POST /analyze — toxicity analysis endpoint
+# GET /health — health check endpoint for extension diagnostics
+# ---------------------------------------------------------------------------
+
+
+@app.get("/health")
+def health():
+    """Health check endpoint for extension and diagnostics."""
+    from model import model, vectorizer
+    return {
+        "status": "ok",
+        "service": "Social Media Toxicity Shield API",
+        "model_loaded": model is not None and vectorizer is not None,
+        "default_threshold": 0.7,
+    }
+
+
+# ---------------------------------------------------------------------------
+# GET /toxic-lexicon — returns high-weight toxic features learned by ML model
+# ---------------------------------------------------------------------------
+
+_TOXIC_LEXICON_CACHE = None
+
+
+def _get_toxic_lexicon():
+    global _TOXIC_LEXICON_CACHE
+    if _TOXIC_LEXICON_CACHE is not None:
+        return _TOXIC_LEXICON_CACHE
+
+    from model import model, vectorizer
+    features = []
+    if model is not None and vectorizer is not None:
+        try:
+            feature_names = vectorizer.get_feature_names_out()
+            coefs = model.coef_[0]
+            for i in range(len(feature_names)):
+                w = float(coefs[i])
+                if w >= 2.0:
+                    features.append({"term": str(feature_names[i]), "weight": round(w, 2)})
+            features.sort(key=lambda x: -x["weight"])
+        except Exception as e:
+            print("Error loading feature weights:", e)
+
+    # Core compound idioms & harassment phrases
+    compounds = [
+        "fuck off", "fuck you", "fucking idiot", "fucking loser", "shut up",
+        "shut the fuck up", "piss off", "pissed off", "piece of shit",
+        "kill yourself", "go die", "delete your account", "waste of space",
+        "worthless piece of shit", "nobody likes you", "drop dead", "eat shit",
+        "get the fuck out", "motherfucker", "dumb fuck", "dumb bitch",
+        "son of a bitch", "ass hole", "fat ugly", "kill your self"
+    ]
+
+    _TOXIC_LEXICON_CACHE = {
+        "features": features,
+        "compounds": compounds,
+        "count": len(features) + len(compounds)
+    }
+    return _TOXIC_LEXICON_CACHE
+
+
+@app.get("/toxic-lexicon")
+def get_toxic_lexicon():
+    """Return toxic vocabulary and feature weights learned by the ML model."""
+    return _get_toxic_lexicon()
+
+
+# ---------------------------------------------------------------------------
+# POST /analyze — toxicity analysis endpoint (supports single text or batch)
 # ---------------------------------------------------------------------------
 
 
 class AnalyzeRequest(BaseModel):
-    text: str
+    text: str | None = None
+    texts: list[str] | None = None
+    threshold: float = 0.7
 
 
 @app.post("/analyze")
 def analyze(payload: AnalyzeRequest):
-    """Analyze text and return its toxicity score."""
-    score = predict_toxicity(payload.text)
+    """Analyze text or batch of texts and return toxicity scores."""
+    # Batch processing
+    if payload.texts is not None:
+        results = []
+        for t in payload.texts:
+            s = predict_toxicity(t)
+            results.append({
+                "text": t,
+                "toxicity_score": round(s, 4),
+                "is_toxic": s > payload.threshold,
+            })
+        return {
+            "results": results,
+            "count": len(results),
+            "threshold": payload.threshold,
+        }
+
+    # Single text processing
+    text_content = payload.text or ""
+    score = predict_toxicity(text_content)
     return {
-        "text": payload.text,
+        "text": text_content,
         "toxicity_score": round(score, 4),
-        "is_toxic": score > 0.7,
+        "is_toxic": score > payload.threshold,
+        "threshold": payload.threshold,
     }
+
+
+# ---------------------------------------------------------------------------
+# POST /analyze-image — NSFW image detection endpoint
+# ---------------------------------------------------------------------------
+
+
+class AnalyzeImageRequest(BaseModel):
+    image_url: str
+    threshold: float = 0.7
+
+
+@app.post("/analyze-image")
+def analyze_image(payload: AnalyzeImageRequest):
+    """Download image from image_url, run NSFW inference, and return classification."""
+    image_url = payload.image_url
+    if not image_url:
+        return {"is_nsfw": False, "score": 0.0}
+
+    global nsfw_classifier
+    if nsfw_classifier is None:
+        try:
+            nsfw_classifier = pipeline("image-classification", model="Falconsai/nsfw_image_detection")
+        except Exception as e:
+            print(f"Warning: Failed to initialize nsfw_classifier: {e}")
+            return {"is_nsfw": False, "score": 0.0}
+
+    try:
+        if image_url.startswith("data:image"):
+            import base64
+            header, encoded = image_url.split(",", 1)
+            image_data = base64.b64decode(encoded)
+            img = Image.open(BytesIO(image_data)).convert("RGB")
+        else:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+                "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Referer": "https://www.reddit.com/",
+            }
+            req = urllib.request.Request(image_url, headers=headers)
+            with urllib.request.urlopen(req, timeout=10) as response:
+                img = Image.open(BytesIO(response.read())).convert("RGB")
+
+        results = nsfw_classifier(img)
+        # Falconsai/nsfw_image_detection outputs label 'nsfw' or 'normal'
+        nsfw_score = 0.0
+        found = False
+        normal_score = None
+        for item in results:
+            lbl = str(item.get("label", "")).lower()
+            if lbl in ("nsfw", "unsafe"):
+                nsfw_score = float(item.get("score", 0.0))
+                found = True
+                break
+            elif lbl in ("normal", "safe"):
+                normal_score = float(item.get("score", 0.0))
+
+        if not found and normal_score is not None:
+            nsfw_score = 1.0 - normal_score
+
+        is_nsfw = nsfw_score > payload.threshold
+        print(f"DEBUG [/analyze-image] is_nsfw={is_nsfw} score={nsfw_score:.4f} url={image_url[:90]}")
+        return {
+            "is_nsfw": is_nsfw,
+            "score": round(nsfw_score, 4),
+        }
+    except Exception as e:
+        print(f"Error analyzing image ({image_url}): {e}")
+        return {"is_nsfw": False, "score": 0.0}
 
 
 # ---------------------------------------------------------------------------

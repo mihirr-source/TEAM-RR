@@ -3,3 +3,6 @@ uvicorn
 pydantic
 scikit-learn
 joblib
+transformers
+torch
+Pillow

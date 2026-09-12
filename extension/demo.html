@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Shield - Live Social Test Feed</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(22, 30, 46, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #ef4444;
+      --primary-glow: rgba(239, 68, 68, 0.35);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(239, 68, 68, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+    }
+
+    /* Top Banner */
+    .banner {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .banner-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .banner-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .banner-badge {
+      font-size: 12px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-weight: 600;
+    }
+
+    .banner-desc {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* Interactive Post Composer */
+    .composer {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .composer-input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 12px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 70px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .composer-input:focus {
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    .composer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .sample-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-sample {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-sample:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text);
+    }
+
+    .btn-post {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      border: none;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 12px var(--primary-glow);
+      transition: opacity 0.2s;
+    }
+
+    .btn-post:hover {
+      opacity: 0.9;
+    }
+
+    /* Feed Posts */
+    .feed {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .post-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .post-card:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: #94a3b8;
+    }
+
+    .author-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .author-name {
+      font-weight: 600;
+      font-size: 15px;
+      color: #ffffff;
+    }
+
+    .author-handle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Target text with selector matching extension */
+    .social-post-text {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #e2e8f0;
+      word-break: break-word;
+    }
+
+    .post-footer {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .post-action {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .post-action:hover {
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Test Bench Banner -->
+    <div class="banner">
+      <div class="banner-header">
+        <div class="banner-title">
+          <span>🛡️ AI Shield Test Feed</span>
+        </div>
+        <span class="banner-badge">Real-time ML Filter Active</span>
+      </div>
+      <p class="banner-desc">
+        This demo feed contains a mix of benign, constructive, and abusive social media posts.
+        With the <strong>AI Shield Chrome Extension</strong> loaded, toxic content is automatically intercepted
+        and blurred with our animated cyber shield overlay before it reaches your eyes.
+      </p>
+    </div>
+
+    <!-- Live Post Tester -->
+    <div class="composer">
+      <textarea id="composerText" class="composer-input" placeholder="Type a custom post or test phrase to see real-time filtering..."></textarea>
+      <div class="composer-actions">
+        <div class="sample-buttons">
+          <button class="btn-sample" onclick="insertSample('I really love collaborating with creative people! 🌟')">Sample Safe</button>
+          <button class="btn-sample" onclick="insertSample('Nobody likes your posts. Delete your account, loser.')">Sample Toxic</button>
+          <button class="btn-sample" onclick="insertSample('You are absolutely worthless at this. Everyone is laughing at you.')">Sample Severe</button>
+        </div>
+        <button class="btn-post" id="btnPublish">Publish Post</button>
+      </div>
+    </div>
+
+    <!-- Posts Feed -->
+    <div class="feed" id="postsFeed">
+      <!-- Post 1: Safe -->
+      <div class="post-card">
+        <div class="post-header">
+          <div class="avatar" style="background: #0284c7; color: white;">ST</div>
+          <div class="author-info">
+            <span class="author-name">Sarah Travels</span>
+            <span class="author-handle">@sunny_travels · 10m</span>
+          </div>
+        </div>
+        <div class="social-post-text" data-shield-text="true">
+          Golden hour on the coast. No filter needed. Loving the fresh ocean breeze and quiet roads today! 🌊🌅 #sunset #travel
+        </div>
+        <div style="margin-top: 12px; border-radius: 10px; overflow: hidden;">
+          <img src="https://picsum.photos/600/300?random=1" alt="Coast sunset" style="width: 100%; height: auto; display: block; border-radius: 10px;" />
+        </div>
+        <div class="post-footer">
+          <span class="post-action">💬 14</span>
+          <span class="post-action">🔁 5</span>
+          <span class="post-action">❤️ 128</span>
+        </div>
+      </div>
+
+      <!-- Post 2: Severely Toxic -->
+      <div class="post-card">
+        <div class="post-header">
+          <div class="avatar" style="background: #e11d48; color: white;">TX</div>
+          <div class="author-info">
+            <span class="author-name">Troll Account</span>
+            <span class="author-handle">@troll_account_x · 25m</span>
+          </div>
+        </div>
+        <div class="social-post-text" data-shield-text="true">
+          Nobody likes your posts. Delete your account, loser.
+        </div>
+        <div class="post-footer">
+          <span class="post-action">💬 2</span>
+          <span class="post-action">🔁 0</span>
+          <span class="post-action">❤️ 1</span>
+        </div>
+      </div>
+
+      <!-- Post 3: Safe Tech -->
+      <div class="post-card">
+        <div class="post-header">
+          <div class="avatar" style="background: #10b981; color: white;">CC</div>
+          <div class="author-info">
+            <span class="author-name">Dev Journey</span>
+            <span class="author-handle">@coffee_and_code · 1h</span>
+          </div>
+        </div>
+        <div class="social-post-text" data-shield-text="true">
+          Shipped a tiny side project today. Small wins add up! Remember to celebrate incremental milestones.
+        </div>
+        <div class="post-footer">
+          <span class="post-action">💬 29</span>
+          <span class="post-action">🔁 18</span>
+          <span class="post-action">❤️ 342</span>
+        </div>
+      </div>
+
+      <!-- Post 4: Highly Abusive -->
+      <div class="post-card">
+        <div class="post-header">
+          <div class="avatar" style="background: #9333ea; color: white;">FW</div>
+          <div class="author-info">
+            <span class="author-name">Flame Warrior</span>
+            <span class="author-handle">@flame_war_404 · 2h</span>
+          </div>
+        </div>
+        <div class="social-post-text" data-shield-text="true">
+          You're absolutely worthless at this. Everyone is laughing at you.
+        </div>
+        <div class="post-footer">
+          <span class="post-action">💬 8</span>
+          <span class="post-action">🔁 1</span>
+          <span class="post-action">❤️ 3</span>
+        </div>
+      </div>
+
+      <!-- Post 5: Safe Plant -->
+      <div class="post-card">
+        <div class="post-header">
+          <div class="avatar" style="background: #059669; color: white;">PP</div>
+          <div class="author-info">
+            <span class="author-name">Botanical Space</span>
+            <span class="author-handle">@plant_parent_92 · 3h</span>
+          </div>
+        </div>
+        <div class="social-post-text" data-shield-text="true">
+          My monstera finally sprouted a brand new leaf 🌿 Taking care of living things is the best antidote to screen fatigue.
+        </div>
+        <div class="post-footer">
+          <span class="post-action">💬 11</span>
+          <span class="post-action">🔁 4</span>
+          <span class="post-action">❤️ 89</span>
+        </div>
+      </div>
+
+      <!-- Post 6: Insulting / Toxic -->
+      <div class="post-card">
+        <div class="post-header">
+          <div class="avatar" style="background: #d97706; color: white;">AR</div>
+          <div class="author-info">
+            <span class="author-name">Anon Critic</span>
+            <span class="author-handle">@anon_rants · 4h</span>
+          </div>
+        </div>
+        <div class="social-post-text" data-shield-text="true">
+          Imagine being this clueless. Total embarrassment. Stop talking before you make yourself look even stupider.
+        </div>
+        <div class="post-footer">
+          <span class="post-action">💬 19</span>
+          <span class="post-action">🔁 3</span>
+          <span class="post-action">❤️ 12</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function insertSample(text) {
+      document.getElementById("composerText").value = text;
+    }
+
+    document.getElementById("btnPublish").addEventListener("click", () => {
+      const input = document.getElementById("composerText");
+      const text = input.value.trim();
+      if (!text) return;
+
+      const feed = document.getElementById("postsFeed");
+      const newCard = document.createElement("div");
+      newCard.className = "post-card";
+      newCard.innerHTML = `
+        <div class="post-header">
+          <div class="avatar" style="background: #2563eb; color: white;">ME</div>
+          <div class="author-info">
+            <span class="author-name">Live Tester</span>
+            <span class="author-handle">@tester · Just now</span>
+          </div>
+        </div>
+        <div class="social-post-text" data-shield-text="true">${text}</div>
+        <div class="post-footer">
+          <span class="post-action">💬 0</span>
+          <span class="post-action">🔁 0</span>
+          <span class="post-action">❤️ 1</span>
+        </div>
+      `;
+
+      feed.insertBefore(newCard, feed.firstChild);
+      input.value = "";
+    });
+
+    // Dynamically load real feed from backend
+    async function loadFeed() {
+      try {
+        const res = await fetch("http://localhost:8000/feed");
+        if (!res.ok) return;
+        const posts = await res.json();
+        if (!Array.isArray(posts) || posts.length === 0) return;
+        const feed = document.getElementById("postsFeed");
+        feed.innerHTML = "";
+        posts.forEach((post) => {
+          const card = document.createElement("div");
+          card.className = "post-card";
+          card.innerHTML = `
+            <div class="post-header">
+              <img src="${post.avatar_url}" class="avatar" alt="${post.author}" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover;" />
+              <div class="author-info">
+                <span class="author-name">${post.author}</span>
+                <span class="author-handle">@${post.author}</span>
+              </div>
+            </div>
+            <div class="social-post-text" data-shield-text="true">${post.text}</div>
+            ${post.image_url ? `
+              <div style="margin-top: 12px; border-radius: 10px; overflow: hidden;">
+                <img src="${post.image_url}" alt="Post image" style="width: 100%; max-height: 380px; object-fit: cover; border-radius: 10px; display: block;" />
+              </div>
+            ` : ""}
+            <div class="post-footer">
+              <span class="post-action">💬 14</span>
+              <span class="post-action">🔁 5</span>
+              <span class="post-action">❤️ 128</span>
+            </div>
+          `;
+          feed.appendChild(card);
+        });
+      } catch (e) {
+        // Keep static fallback if backend is offline
+      }
+    }
+    loadFeed();
+  </script>
+</body>
+</html>

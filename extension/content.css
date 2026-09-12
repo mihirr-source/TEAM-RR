@@ -1,0 +1,79 @@
+/* ==========================================================================
+   AI Shield - In-Place Phrase Level Protection Styling
+   Works across Wikipedia, Reddit, YouTube, Social Feeds, and Any Web App.
+   ========================================================================== */
+
+/* Inline Shield Container for Harmful Phrase Only */
+.ai-shield-inline-shield {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: baseline !important;
+  position: relative !important;
+  padding: 1px 7px 1px 5px !important;
+  margin: 0 2px !important;
+  border-radius: 6px !important;
+  background: rgba(239, 68, 68, 0.18) !important;
+  border: 1px solid rgba(239, 68, 68, 0.55) !important;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.25) !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  text-decoration: none !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  gap: 4px !important;
+  line-height: 1.2 !important;
+  max-width: fit-content !important;
+}
+
+.ai-shield-inline-shield:hover {
+  background: rgba(239, 68, 68, 0.28) !important;
+  border-color: rgba(239, 68, 68, 0.85) !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+.ai-shield-inline-shield:active {
+  transform: translateY(0) !important;
+}
+
+/* Red Shield Icon */
+.ai-shield-inline-icon {
+  font-size: 11px !important;
+  line-height: 1 !important;
+  filter: drop-shadow(0 0 4px #ef4444) !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+/* Blurred Phrase Text */
+.ai-shield-phrase-blurred {
+  filter: blur(6px) !important;
+  opacity: 0.25 !important;
+  transition: filter 0.2s ease, opacity 0.2s ease !important;
+  pointer-events: none !important;
+  letter-spacing: -0.2px !important;
+}
+
+/* When Revealed (1-Click Toggle) */
+.ai-shield-inline-shield.ai-shield-revealed {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  box-shadow: none !important;
+}
+
+.ai-shield-inline-shield.ai-shield-revealed:hover {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border-color: rgba(16, 185, 129, 0.6) !important;
+}
+
+.ai-shield-inline-shield.ai-shield-revealed .ai-shield-inline-icon {
+  opacity: 0.5 !important;
+  filter: none !important;
+}
+
+.ai-shield-inline-shield.ai-shield-revealed .ai-shield-phrase-blurred {
+  filter: none !important;
+  opacity: 1 !important;
+  user-select: text !important;
+  pointer-events: auto !important;
+}

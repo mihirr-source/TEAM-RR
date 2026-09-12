@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Shield Settings</title>
+  <style>
+    :root {
+      --bg-dark: #090a0f;
+      --card-bg: rgba(22, 27, 34, 0.75);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --accent-red: #ef4444;
+      --accent-red-glow: rgba(239, 68, 68, 0.4);
+      --accent-green: #10b981;
+      --accent-green-glow: rgba(16, 185, 129, 0.4);
+      --text-main: #f3f4f6;
+      --text-sub: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      width: 340px;
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(239, 68, 68, 0.12), transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(16, 185, 129, 0.08), transparent 40%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      color: var(--text-main);
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px var(--accent-red-glow);
+    }
+
+    .brand-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: #ffffff;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      background: linear-gradient(90deg, #ffffff, #e5e7eb);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .version-tag {
+      font-size: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 2px 7px;
+      border-radius: 9999px;
+      color: var(--text-sub);
+    }
+
+    /* Master Toggle Card */
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toggle-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .toggle-label span {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .toggle-label small {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    /* Switch Component */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #374151;
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 34px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 2px;
+      bottom: 2px;
+      background-color: #ffffff;
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    input:checked + .slider {
+      background: linear-gradient(90deg, #10b981, #059669);
+      box-shadow: 0 0 12px var(--accent-green-glow);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+
+    /* Status Indicator */
+    .status-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 11px;
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #6b7280;
+      transition: background-color 0.3s;
+    }
+
+    .status-dot.connected {
+      background-color: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    .status-dot.disconnected {
+      background-color: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+    }
+
+    .status-text {
+      color: var(--text-sub);
+    }
+
+    .btn-refresh {
+      background: none;
+      border: none;
+      color: var(--text-sub);
+      cursor: pointer;
+      font-size: 11px;
+      text-decoration: underline;
+      padding: 0 2px;
+    }
+
+    .btn-refresh:hover {
+      color: #ffffff;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      backdrop-filter: blur(12px);
+    }
+
+    .stat-number {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 2px;
+    }
+
+    .stat-number.scanned {
+      color: #60a5fa;
+    }
+
+    .stat-number.blocked {
+      color: #f87171;
+    }
+
+    .stat-desc {
+      font-size: 11px;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Sensitivity Section */
+    .sensitivity-card {
+      margin-bottom: 14px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .slider-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .slider-value-tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    /* Segmented Controls for sensitivity */
+    .segmented-control {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .segment-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 7px 0;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .segment-btn.active {
+      background: rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .sensitivity-desc {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-top: 8px;
+      line-height: 1.35;
+    }
+
+    /* Action links */
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 4px;
+    }
+
+    .demo-link-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.1));
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .demo-link-btn:hover {
+      background: rgba(239, 68, 68, 0.3);
+      color: #ffffff;
+      border-color: rgba(239, 68, 68, 0.6);
+    }
+
+    .reset-btn {
+      background: none;
+      border: none;
+      color: #6b7280;
+      font-size: 11px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .reset-btn:hover {
+      color: #e5e7eb;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2L4 5V11.09C4 16.14 7.41 20.85 12 22C16.59 20.85 20 16.14 20 11.09V5L12 2ZM10.5 15.5L7 12L8.41 10.59L10.5 12.67L15.59 7.58L17 9L10.5 15.5Z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-title">AI Shield</div>
+      </div>
+    </div>
+    <span class="version-tag">v1.0</span>
+  </div>
+
+  <!-- Master Switch Card -->
+  <div class="card">
+    <div class="toggle-row">
+      <div class="toggle-label">
+        <span id="shieldStatusTitle">Protection Active</span>
+        <small id="shieldStatusDesc">Filtering toxic posts in real time</small>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="masterToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- Backend Status Bar -->
+    <div class="status-badge">
+      <div class="status-left">
+        <div class="status-dot" id="backendDot"></div>
+        <span class="status-text" id="backendStatusText">Checking backend...</span>
+      </div>
+      <button class="btn-refresh" id="btnRefreshHealth">Retry</button>
+    </div>
+  </div>
+
+  <!-- Statistics Grid -->
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-number scanned" id="statScanned">0</div>
+      <div class="stat-desc">Posts Scanned</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number blocked" id="statBlocked">0</div>
+      <div class="stat-desc">Threats Blocked</div>
+    </div>
+  </div>
+
+  <!-- Sensitivity Control Card -->
+  <div class="card sensitivity-card">
+    <div class="slider-header">
+      <span class="slider-title">Sensitivity Level</span>
+      <span class="slider-value-tag" id="sensitivityTag">Balanced (70%)</span>
+    </div>
+
+    <div class="segmented-control">
+      <button class="segment-btn" data-level="strict" data-threshold="0.5">Strict</button>
+      <button class="segment-btn active" data-level="balanced" data-threshold="0.7">Balanced</button>
+      <button class="segment-btn" data-level="relaxed" data-threshold="0.85">Relaxed</button>
+    </div>
+
+    <p class="sensitivity-desc" id="sensitivityExplanation">
+      Standard protection: blocks overt insults, hate speech, and harassment.
+    </p>
+  </div>
+
+  <!-- Manual Scan Current Page Trigger -->
+  <div style="margin-bottom: 12px;">
+    <button id="btnScanCurrentPage" style="
+      width: 100%;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 9px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+      transition: all 0.2s;
+    ">
+      <span>⚡ Scan Current Page Now</span>
+    </button>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="demo-link-btn" id="btnOpenDemo">
+      <span>🛡️ Open Test Demo</span>
+    </button>
+    <button class="reset-btn" id="btnResetStats">Reset Stats</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -33,5 +33,24 @@ for text in test_texts:
     flag = "TOXIC" if result["is_toxic"] else "SAFE"
     print(f"  [{flag:5s}] score={result['toxicity_score']:.3f}  \"{text}\"")
 
+# --- Test POST /analyze-image ---
+print()
+print("=== POST /analyze-image ===")
+test_images = [
+    ("Safe Landscape", "https://picsum.photos/600/400?random=1"),
+]
+for label, img_url in test_images:
+    data = json.dumps({"image_url": img_url}).encode()
+    req = urllib.request.Request(
+        base + "/analyze-image",
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req) as r:
+        result = json.loads(r.read())
+    flag = "NSFW" if result.get("is_nsfw") else "SAFE"
+    print(f"  [{flag:5s}] score={result.get('score', 0):.3f}  [{label}] \"{img_url}\"")
+
 print()
 print("=== All API Tests Passed ===")
