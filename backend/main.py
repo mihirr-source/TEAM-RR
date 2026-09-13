@@ -471,6 +471,7 @@ def check_draft(payload: CheckDraftRequest):
 class AnalyzeTriggerRequest(BaseModel):
     trigger: str
     text: str
+    threshold: float = 0.35
 
 
 @app.post("/analyze-trigger")
@@ -478,19 +479,38 @@ def analyze_trigger(payload: AnalyzeTriggerRequest):
     """Calculate semantic similarity between custom trigger and scraped text using all-MiniLM-L6-v2."""
     trigger = (payload.trigger or "").strip()
     text = (payload.text or "").strip()
+    threshold = float(payload.threshold if payload.threshold is not None else 0.35)
+
     if not trigger or not text or trigger_model is None:
         return {
             "trigger_matched": False,
-            "score": 0.0
+            "score": 0.0,
+            "reason": "missing_input_or_model"
         }
 
-    emb_trigger = trigger_model.encode(trigger, convert_to_tensor=True)
-    emb_text = trigger_model.encode(text, convert_to_tensor=True)
-    cos_sim = util.cos_sim(emb_trigger, emb_text)
-    score = float(cos_sim.item())
+    direct_match = trigger.lower() in text.lower()
 
-    is_matched = bool(score > 0.45)
+    try:
+        emb_trigger = trigger_model.encode(trigger, convert_to_tensor=True)
+        emb_text = trigger_model.encode(text, convert_to_tensor=True)
+        cos_sim = util.cos_sim(emb_trigger, emb_text)
+        score = float(cos_sim.item())
+    except Exception as e:
+        print(f"Error computing trigger embeddings: {e}")
+        score = 0.0
+
+    if direct_match:
+        score = max(score, 0.95)
+        is_matched = True
+        reason = "exact_keyword"
+    else:
+        is_matched = bool(score >= threshold)
+        reason = "semantic_similarity" if is_matched else "below_threshold"
+
     return {
         "trigger_matched": is_matched,
-        "score": float(score)
+        "score": round(score, 4),
+        "threshold": threshold,
+        "reason": reason
     }
+

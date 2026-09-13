@@ -307,6 +307,41 @@
       <div id="chatMessages" style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;"></div>
     </div>
 
+    <!-- Live Semantic Trigger Filter Test Bench -->
+    <div class="composer semantic-bench" style="border: 1px solid rgba(139, 92, 246, 0.35); background: rgba(30, 27, 75, 0.45); margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: #c4b5fd;">
+          <span style="font-size: 17px;">🎯</span>
+          <span>Live Semantic Trigger Filter Test Bench</span>
+        </div>
+        <span id="semanticTriggerStatus" style="font-size: 11px; background: rgba(139, 92, 246, 0.2); color: #ddd6fe; border: 1px solid rgba(139, 92, 246, 0.4); padding: 3px 10px; border-radius: 9999px; font-weight: 600;">
+          all-MiniLM-L6-v2 Active
+        </span>
+      </div>
+      <p style="font-size: 12.5px; color: #94a3b8; margin-bottom: 12px; line-height: 1.45;">
+        Test how the SentenceTransformers AI model dynamically intercepts custom sensitive topics (e.g. phobias, spoilers, harassment) through cosine similarity—even when posts do not contain the exact keyword!
+      </p>
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <input type="text" id="demoTriggerInput" placeholder="Enter trigger word or phrase (e.g. plants, sourdough, travel, loser)..." 
+               style="flex: 1; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; color: #ffffff; font-size: 13.5px; outline: none;" />
+        <button type="button" id="btnApplyTrigger" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; color: white; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);">
+          Apply Filter
+        </button>
+        <button type="button" id="btnClearTrigger" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; padding: 10px 14px; border-radius: 8px; font-size: 13px; cursor: pointer;">
+          Clear
+        </button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">Quick Presets:</span>
+        <button type="button" class="btn-sample" onclick="setDemoTrigger('plants')">🌿 Plants / Monstera</button>
+        <button type="button" class="btn-sample" onclick="setDemoTrigger('sourdough')">🍞 Sourdough / Baking</button>
+        <button type="button" class="btn-sample" onclick="setDemoTrigger('travel')">🌊 Travel / Coast</button>
+        <button type="button" class="btn-sample" onclick="setDemoTrigger('worthless')">⚠️ Insult / Worthless</button>
+        <button type="button" class="btn-sample" onclick="setDemoTrigger('spiders')">🕷️ Spiders / Phobia</button>
+      </div>
+      <div id="triggerResultBanner" style="display: none; margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 12px; background: rgba(139, 92, 246, 0.18); border: 1px solid rgba(139, 92, 246, 0.4); color: #e9d5ff; line-height: 1.4;"></div>
+    </div>
+
     <!-- Posts Feed -->
     <div class="feed" id="postsFeed">
       <!-- Post 1: Safe -->
@@ -519,7 +554,117 @@
         // Keep static fallback if backend is offline
       }
     }
-    loadFeed();
+    loadFeed().then(() => {
+      const saved = localStorage.getItem("ai_shield_trigger") || "";
+      if (saved) {
+        document.getElementById("demoTriggerInput").value = saved;
+        setTimeout(applyDemoTrigger, 200);
+      }
+    });
+
+    function setDemoTrigger(val) {
+      document.getElementById("demoTriggerInput").value = val;
+      applyDemoTrigger();
+    }
+
+    async function applyDemoTrigger() {
+      const input = document.getElementById("demoTriggerInput");
+      const trigger = (input.value || "").trim();
+      const banner = document.getElementById("triggerResultBanner");
+
+      if (!trigger) {
+        clearDemoTrigger();
+        return;
+      }
+
+      localStorage.setItem("ai_shield_trigger", trigger);
+      window.__AI_SHIELD_TRIGGER__ = trigger;
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ trigger: trigger, triggerInput: trigger });
+      }
+
+      banner.style.display = "block";
+      banner.innerHTML = `Scanning feed for semantic similarity to <strong>"${trigger}"</strong> via <code>all-MiniLM-L6-v2</code>...`;
+
+      const postElements = document.querySelectorAll(".social-post-text");
+      let matchCount = 0;
+
+      for (const el of postElements) {
+        const text = (el.innerText || el.textContent || "").trim();
+        if (!text) continue;
+
+        try {
+          const res = await fetch("http://localhost:8000/analyze-trigger", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ trigger: trigger, text: text, threshold: 0.35 }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            let card = el.closest(".post-card") || el.parentElement;
+            let existingBadge = card.querySelector(".trigger-match-badge");
+
+            if (data && data.trigger_matched) {
+              matchCount++;
+              el.style.filter = "blur(14px)";
+              el.style.transition = "filter 0.3s ease";
+              el.setAttribute("data-trigger-blocked", "true");
+
+              if (!existingBadge) {
+                existingBadge = document.createElement("div");
+                existingBadge.className = "trigger-match-badge";
+                existingBadge.style.cssText = "margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(239, 68, 68, 0.45); color: #fca5a5; padding: 5px 12px; border-radius: 8px; font-size: 11.5px; cursor: pointer; user-select: none; font-weight: 500;";
+                card.appendChild(existingBadge);
+              }
+              const pct = Math.round(Number(data.score || 0) * 100);
+              existingBadge.innerHTML = `🛡️ Filtered by Trigger: "<strong>${trigger}</strong>" (${pct}% match) · <span style="text-decoration: underline; font-weight: 600;">Click to reveal</span>`;
+              existingBadge.onclick = () => {
+                if (el.style.filter === "none") {
+                  el.style.filter = "blur(14px)";
+                  existingBadge.querySelector("span").textContent = "Click to reveal";
+                } else {
+                  el.style.filter = "none";
+                  existingBadge.querySelector("span").textContent = "Click to blur";
+                }
+              };
+            } else {
+              el.style.filter = "none";
+              el.removeAttribute("data-trigger-blocked");
+              if (existingBadge) existingBadge.remove();
+            }
+          }
+        } catch (err) {
+          console.warn("[Demo] Trigger analysis error:", err);
+        }
+      }
+
+      banner.innerHTML = `✓ Active Trigger Filter: <strong>"${trigger}"</strong> · Intercepted <strong>${matchCount}</strong> post(s) in feed.`;
+    }
+
+    function clearDemoTrigger() {
+      document.getElementById("demoTriggerInput").value = "";
+      localStorage.removeItem("ai_shield_trigger");
+      window.__AI_SHIELD_TRIGGER__ = "";
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.remove(["trigger", "triggerInput"]);
+      }
+      document.querySelectorAll(".social-post-text").forEach((el) => {
+        el.style.filter = "none";
+        el.removeAttribute("data-trigger-blocked");
+        const card = el.closest(".post-card") || el.parentElement;
+        const badge = card ? card.querySelector(".trigger-match-badge") : null;
+        if (badge) badge.remove();
+      });
+      const banner = document.getElementById("triggerResultBanner");
+      banner.style.display = "none";
+    }
+
+    document.getElementById("btnApplyTrigger").addEventListener("click", applyDemoTrigger);
+    document.getElementById("btnClearTrigger").addEventListener("click", clearDemoTrigger);
+    document.getElementById("demoTriggerInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") applyDemoTrigger();
+    });
   </script>
   <script src="content.js"></script>
 </body>

@@ -335,58 +335,64 @@
     }
 
     // Asynchronously fetch user's saved trigger and analyze text for semantic trigger filtering
-    if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(["trigger", "triggerInput"], async (storageData) => {
-        const trigger = (storageData && (storageData.trigger || storageData.triggerInput || "")).trim();
-        if (!trigger) return;
+    const processSemanticTrigger = async (trigger) => {
+      if (!trigger) return;
+      if (root && root.querySelectorAll) {
+        root.querySelectorAll("[data-shield-text], .social-post-text").forEach((el) => {
+          if (!el.closest(".ai-shield-inline-shield")) {
+            candidateElements.add(el);
+          }
+        });
+      }
 
-        if (root && root.querySelectorAll) {
-          root.querySelectorAll("[data-shield-text], .social-post-text").forEach((el) => {
-            if (!el.closest(".ai-shield-inline-shield")) {
-              candidateElements.add(el);
-            }
+      for (const el of candidateElements) {
+        if (el.dataset.triggerScanned === trigger) continue;
+        el.dataset.triggerScanned = trigger;
+
+        const scrapedText = (el.innerText || el.textContent || "").trim();
+        if (!scrapedText || scrapedText.length < 2) continue;
+
+        try {
+          const res = await fetch("http://localhost:8000/analyze-trigger", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              trigger: trigger,
+              text: scrapedText,
+            }),
           });
-        }
 
-        for (const el of candidateElements) {
-          if (el.dataset.triggerScanned === trigger) continue;
-          el.dataset.triggerScanned = trigger;
-
-          const scrapedText = (el.innerText || el.textContent || "").trim();
-          if (!scrapedText || scrapedText.length < 2) continue;
-
-          try {
-            const res = await fetch("http://localhost:8000/analyze-trigger", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                trigger: trigger,
-                text: scrapedText,
-              }),
-            });
-
-            if (res.ok) {
-              const data = await res.json();
-              if (data && data.trigger_matched === true) {
-                el.style.filter = "blur(15px)";
-                el.style.border = "2px solid red";
-                el.setAttribute("data-trigger-blocked", "true");
-                if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
-                  chrome.runtime.sendMessage({
-                    type: "RECORD_BLOCKED",
-                    scanned: 0,
-                    blocked: 1,
-                  });
-                }
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.trigger_matched === true) {
+              el.style.filter = "blur(15px)";
+              el.style.border = "2px solid #ef4444";
+              el.setAttribute("data-trigger-blocked", "true");
+              if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
+                chrome.runtime.sendMessage({
+                  type: "RECORD_BLOCKED",
+                  scanned: 0,
+                  blocked: 1,
+                });
               }
             }
-          } catch (err) {
-            // Silently handle backend connection error
           }
+        } catch (err) {
+          // Silently handle backend connection error
         }
+      }
+    };
+
+    if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(["trigger", "triggerInput"], (storageData) => {
+        const trigger = (storageData && (storageData.trigger || storageData.triggerInput || "")).trim();
+        if (trigger) processSemanticTrigger(trigger);
       });
+    } else {
+      const fallbackTrigger = (window.__AI_SHIELD_TRIGGER__ || (typeof localStorage !== "undefined" && localStorage.getItem("ai_shield_trigger")) || "").trim();
+      if (fallbackTrigger) processSemanticTrigger(fallbackTrigger);
     }
   }
 
