@@ -28,3 +28,4 @@ models/
 # OS specific files
 .DS_Store
 Thumbs.db
+cyhi-logs/.local/
