@@ -1,19 +1,63 @@
 /**
- * AI Shield - Semantic Trigger Filter Popup
- * Saves and retrieves the custom semantic trigger phrase to/from chrome.storage.local.
+ * AI Shield - Semantic Trigger & Master Protection Popup
+ * Controls master protection toggle and saves/retrieves custom semantic triggers.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
+  const masterToggle = document.getElementById("masterToggle");
+  const shieldStatusTitle = document.getElementById("shieldStatusTitle");
+  const shieldStatusDesc = document.getElementById("shieldStatusDesc");
   const triggerInput = document.getElementById("triggerInput");
   const saveButton = document.getElementById("saveButton") || document.querySelector("button");
   const statusMessage = document.getElementById("statusMessage");
   const btnOpenDemo = document.getElementById("btnOpenDemo");
 
-  // Retrieve saved trigger value when popup opens
+  function updateToggleLabels(enabled) {
+    if (shieldStatusTitle && shieldStatusDesc) {
+      if (enabled) {
+        shieldStatusTitle.textContent = "Protection Active";
+        shieldStatusDesc.textContent = "Filtering toxic posts & triggers";
+      } else {
+        shieldStatusTitle.textContent = "Protection Paused";
+        shieldStatusDesc.textContent = "Protection is currently turned off";
+      }
+    }
+  }
+
+  // Retrieve saved state when popup opens
   if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-    chrome.storage.local.get(["trigger", "triggerInput"], (data) => {
+    chrome.storage.local.get(["enabled", "trigger", "triggerInput"], (data) => {
+      const isEnabled = data.enabled !== undefined ? data.enabled : true;
+      if (masterToggle) {
+        masterToggle.checked = isEnabled;
+        updateToggleLabels(isEnabled);
+      }
       if (triggerInput) {
         triggerInput.value = data.trigger || data.triggerInput || "";
+      }
+    });
+
+    // Listen to storage changes to keep toggle in sync if changed elsewhere
+    if (chrome.storage.onChanged) {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area !== "local") return;
+        if (changes.enabled !== undefined && masterToggle) {
+          masterToggle.checked = changes.enabled.newValue;
+          updateToggleLabels(changes.enabled.newValue);
+        }
+      });
+    }
+  }
+
+  // Master Toggle Change Event
+  if (masterToggle) {
+    masterToggle.addEventListener("change", (e) => {
+      const isChecked = e.target.checked;
+      updateToggleLabels(isChecked);
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ enabled: isChecked }, () => {
+          console.log("[AI Shield] Protection enabled state set to:", isChecked);
+        });
       }
     });
   }

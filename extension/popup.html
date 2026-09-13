@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Shield - Semantic Trigger Filter</title>
+  <title>AI Shield - Protection & Trigger Filter</title>
   <style>
     :root {
       --bg: #0b0f19;
@@ -33,7 +33,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       padding-bottom: 10px;
       border-bottom: 1px solid var(--border);
     }
@@ -42,6 +42,90 @@
       font-size: 15px;
       font-weight: 700;
       letter-spacing: -0.2px;
+    }
+
+    /* Master Switch Card */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      backdrop-filter: blur(12px);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toggle-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    #shieldStatusTitle {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      transition: color 0.2s;
+    }
+
+    #shieldStatusDesc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Toggle Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #334155;
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 34px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 2px;
+      bottom: 2px;
+      background-color: #ffffff;
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    input:checked + .slider {
+      background: linear-gradient(90deg, #10b981, #059669);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(22px);
     }
 
     .form-group {
@@ -136,12 +220,26 @@
 <body>
   <div class="header">
     <span style="font-size: 18px;">🛡️</span>
-    <span class="header-title">AI Shield - Trigger Filter</span>
+    <span class="header-title">AI Shield</span>
+  </div>
+
+  <!-- Master Switch Card -->
+  <div class="card">
+    <div class="toggle-row">
+      <div class="toggle-label">
+        <span id="shieldStatusTitle">Protection Active</span>
+        <small id="shieldStatusDesc">Filtering toxic posts &amp; triggers</small>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="masterToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
   </div>
 
   <div class="form-group">
     <label for="triggerInput">Semantic Trigger Word / Phrase:</label>
-    <input type="text" id="triggerInput" placeholder="e.g. spiders, violence, abuse...">
+    <input type="text" id="triggerInput" placeholder="e.g. spiders, spoilers, abuse...">
   </div>
 
   <div class="actions">

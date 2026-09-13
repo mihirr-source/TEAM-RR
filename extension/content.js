@@ -120,6 +120,10 @@
           isEnabled = changes.enabled.newValue;
           if (!isEnabled) {
             unblurAllInline();
+            document.querySelectorAll("[data-trigger-blocked='true']").forEach((el) => {
+              el.style.filter = "";
+              el.style.border = "";
+            });
           } else {
             reblurAllInline();
             scanDocument();
