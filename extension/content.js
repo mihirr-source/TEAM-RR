@@ -324,7 +324,7 @@
       totalBlocked += processTextNode(node);
     }
 
-    if (totalBlocked > 0) {
+    if (nodesToProcess.length > 0) {
       if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
         chrome.runtime.sendMessage({
           type: "RECORD_BLOCKED",
@@ -373,6 +373,13 @@
                 el.style.filter = "blur(15px)";
                 el.style.border = "2px solid red";
                 el.setAttribute("data-trigger-blocked", "true");
+                if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
+                  chrome.runtime.sendMessage({
+                    type: "RECORD_BLOCKED",
+                    scanned: 0,
+                    blocked: 1,
+                  });
+                }
               }
             }
           } catch (err) {
@@ -544,6 +551,14 @@
 
         const data = await response.json();
         console.log("AI Shield [Image Scan]:", src.substring(0, 60), data);
+
+        if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
+          chrome.runtime.sendMessage({
+            type: "RECORD_BLOCKED",
+            scanned: 1,
+            blocked: (data && data.is_nsfw === true) ? 1 : 0,
+          });
+        }
 
         if (data && data.is_nsfw === true) {
           img.style.filter = "blur(25px)";

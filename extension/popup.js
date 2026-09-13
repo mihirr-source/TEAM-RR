@@ -1,6 +1,7 @@
 /**
  * AI Shield - Semantic Trigger & Master Protection Popup
- * Controls master protection toggle and saves/retrieves custom semantic triggers.
+ * Controls master protection toggle, displays live statistics (total analyzed, words discarded),
+ * and saves/retrieves custom semantic triggers.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -11,6 +12,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveButton = document.getElementById("saveButton") || document.querySelector("button");
   const statusMessage = document.getElementById("statusMessage");
   const btnOpenDemo = document.getElementById("btnOpenDemo");
+  const statAnalyzed = document.getElementById("statAnalyzed");
+  const statDiscarded = document.getElementById("statDiscarded");
+  const btnResetStats = document.getElementById("btnResetStats");
 
   function updateToggleLabels(enabled) {
     if (shieldStatusTitle && shieldStatusDesc) {
@@ -24,26 +28,48 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Retrieve saved state when popup opens
-  if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-    chrome.storage.local.get(["enabled", "trigger", "triggerInput"], (data) => {
-      const isEnabled = data.enabled !== undefined ? data.enabled : true;
-      if (masterToggle) {
-        masterToggle.checked = isEnabled;
-        updateToggleLabels(isEnabled);
-      }
-      if (triggerInput) {
-        triggerInput.value = data.trigger || data.triggerInput || "";
-      }
-    });
+  function updateStats(scanned, blocked) {
+    if (statAnalyzed) {
+      statAnalyzed.textContent = Number(scanned || 0).toLocaleString();
+    }
+    if (statDiscarded) {
+      statDiscarded.textContent = Number(blocked || 0).toLocaleString();
+    }
+  }
 
-    // Listen to storage changes to keep toggle in sync if changed elsewhere
+  // Retrieve saved state and statistics when popup opens
+  if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get(
+      ["enabled", "trigger", "triggerInput", "posts_scanned", "threats_blocked"],
+      (data) => {
+        const isEnabled = data.enabled !== undefined ? data.enabled : true;
+        if (masterToggle) {
+          masterToggle.checked = isEnabled;
+          updateToggleLabels(isEnabled);
+        }
+        if (triggerInput) {
+          triggerInput.value = data.trigger || data.triggerInput || "";
+        }
+        updateStats(data.posts_scanned, data.threats_blocked);
+      }
+    );
+
+    // Listen to storage changes to keep toggle and stats live in real time
     if (chrome.storage.onChanged) {
       chrome.storage.onChanged.addListener((changes, area) => {
         if (area !== "local") return;
+
         if (changes.enabled !== undefined && masterToggle) {
           masterToggle.checked = changes.enabled.newValue;
           updateToggleLabels(changes.enabled.newValue);
+        }
+
+        if (changes.posts_scanned !== undefined && statAnalyzed) {
+          statAnalyzed.textContent = Number(changes.posts_scanned.newValue || 0).toLocaleString();
+        }
+
+        if (changes.threats_blocked !== undefined && statDiscarded) {
+          statDiscarded.textContent = Number(changes.threats_blocked.newValue || 0).toLocaleString();
         }
       });
     }
@@ -88,6 +114,18 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.key === "Enter") {
         e.preventDefault();
         saveButton.click();
+      }
+    });
+  }
+
+  // Reset Stats button handler
+  if (btnResetStats) {
+    btnResetStats.addEventListener("click", () => {
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ posts_scanned: 0, threats_blocked: 0 }, () => {
+          updateStats(0, 0);
+          console.log("[AI Shield] Statistics reset to 0.");
+        });
       }
     });
   }
