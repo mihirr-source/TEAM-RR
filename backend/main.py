@@ -1,14 +1,18 @@
-import os
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+import base64
 from io import BytesIO
+import os
+import re
 import urllib.request
-from PIL import Image
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from PIL import Image
 from pydantic import BaseModel
-from transformers import pipeline
 from sentence_transformers import SentenceTransformer, util
+from transformers import pipeline
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 try:
     from backend.model import predict_toxicity, model, vectorizer
@@ -142,7 +146,6 @@ def get_demo():
     """Serve the interactive demo feed HTML page directly over HTTP."""
     demo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "extension", "demo.html"))
     if os.path.exists(demo_path):
-        from fastapi.responses import FileResponse
         return FileResponse(demo_path)
     return {"error": f"demo.html not found at {demo_path}"}
 
@@ -152,7 +155,6 @@ def get_content_js():
     """Serve extension content.js directly over HTTP."""
     js_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "extension", "content.js"))
     if os.path.exists(js_path):
-        from fastapi.responses import FileResponse
         return FileResponse(js_path, media_type="application/javascript")
     return {"error": "content.js not found"}
 
@@ -162,7 +164,6 @@ def get_content_css():
     """Serve extension content.css directly over HTTP."""
     css_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "extension", "content.css"))
     if os.path.exists(css_path):
-        from fastapi.responses import FileResponse
         return FileResponse(css_path, media_type="text/css")
     return {"error": "content.css not found"}
 
@@ -306,8 +307,7 @@ def analyze_image(payload: AnalyzeImageRequest):
 
     try:
         if image_url.startswith("data:image"):
-            import base64
-            header, encoded = image_url.split(",", 1)
+            encoded = image_url.split(",", 1)[1] if "," in image_url else image_url
             image_data = base64.b64decode(encoded)
             img = Image.open(BytesIO(image_data)).convert("RGB")
         else:
@@ -367,7 +367,7 @@ def create_post(payload: CreatePostRequest):
     score = predict_toxicity(payload.text)
     post_id = max([p["id"] for p in MOCK_POSTS], default=0) + 1
     image_url = payload.image_url or f"https://picsum.photos/600/400?random={post_id + 100}"
-    
+
     new_post = {
         "id": post_id,
         "author": payload.author,
@@ -383,8 +383,6 @@ def create_post(payload: CreatePostRequest):
 # ---------------------------------------------------------------------------
 # POST /check-draft — pre-post toxicity check & safe rephrase suggestions
 # ---------------------------------------------------------------------------
-
-import re
 
 PHRASE_REPLACEMENTS = [
     (r'(?i)\bnobody likes your posts\.?\s*delete your account,?\s*loser\.?', 'I have a different perspective on this topic.'),
@@ -489,13 +487,10 @@ def analyze_trigger(payload: AnalyzeTriggerRequest):
     emb_trigger = trigger_model.encode(trigger, convert_to_tensor=True)
     emb_text = trigger_model.encode(text, convert_to_tensor=True)
     cos_sim = util.cos_sim(emb_trigger, emb_text)
-    score = float(cos_sim[0][0])
+    score = float(cos_sim.item())
 
     is_matched = bool(score > 0.45)
     return {
         "trigger_matched": is_matched,
         "score": float(score)
     }
-
-
-
