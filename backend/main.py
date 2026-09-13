@@ -10,7 +10,10 @@ from pydantic import BaseModel
 from transformers import pipeline
 from sentence_transformers import SentenceTransformer, util
 
-from model import predict_toxicity
+try:
+    from backend.model import predict_toxicity, model, vectorizer
+except ImportError:
+    from model import predict_toxicity, model, vectorizer
 
 # Globally load Falconsai/nsfw_image_detection model
 try:
@@ -27,11 +30,17 @@ except Exception as e:
     print(f"Warning: Failed to load all-MiniLM-L6-v2: {e}")
     trigger_model = None
 
-app = FastAPI(title="Social Media Safety Demo API")
+app = FastAPI(
+    title="AI Shield - Real-Time ML Backend API",
+    description="Interactive API documentation for all AI Shield machine learning models: Scikit-Learn Toxicity Classification, Falconsai Vision Transformer (NSFW Detection), and SentenceTransformer Semantic Trigger Filtering.",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "*"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -166,7 +175,6 @@ def get_content_css():
 @app.get("/health")
 def health():
     """Health check endpoint for extension and diagnostics."""
-    from model import model, vectorizer
     return {
         "status": "ok",
         "service": "Social Media Toxicity Shield API",
@@ -187,7 +195,6 @@ def _get_toxic_lexicon():
     if _TOXIC_LEXICON_CACHE is not None:
         return _TOXIC_LEXICON_CACHE
 
-    from model import model, vectorizer
     features = []
     if model is not None and vectorizer is not None:
         try:
